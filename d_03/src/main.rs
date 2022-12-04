@@ -1,6 +1,7 @@
 fn main() {
     let data_str = get_data_str();
     println!("First challenge: {}", first_challenge(data_str));
+    println!("Second challenge: {}", second_challenge(data_str));
 }
 
 #[cfg(test)]
@@ -42,6 +43,42 @@ mod tests {
         let priority = first_challenge(data);
         assert_eq!(priority, 157)
     }
+    
+    #[test]
+    fn test_find_badge() {
+        let data = ("vJrwpWtwJgWrhcsFMMfFFhFp",
+        "jqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL",
+        "PmmdzqPrVvPwwTWBwg");
+        let badge = find_badge(&data);
+        assert_eq!(badge, 'r')
+    }
+    
+    #[test]
+    fn test_compute_group_priority() {
+        let data = ("vJrwpWtwJgWrhcsFMMfFFhFp",
+        "jqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL",
+        "PmmdzqPrVvPwwTWBwg");
+        let priority = compute_group_priority(&data);
+        assert_eq!(priority, 18)
+    }
+    
+    #[test]
+    fn test_split_into_group() {
+        let data = "vJrwpWtwJgWrhcsFMMfFFhFp
+jqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL
+PmmdzqPrVvPwwTWBwg";
+        let group = split_into_group(data);
+        assert_eq!(group, [("vJrwpWtwJgWrhcsFMMfFFhFp",
+        "jqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL",
+        "PmmdzqPrVvPwwTWBwg")])
+    }
+    
+    #[test]
+    fn test_second_challenge() {
+        let data = get_sample_data_str();
+        let priority = second_challenge(data);
+        assert_eq!(priority, 70)
+    }
 }
 
 fn first_challenge(data:&str) -> i32 {
@@ -61,9 +98,14 @@ fn split_into_compartment(rucksack:&str) -> (&str, &str) {
 }
 
 fn find_duplicate(compartments:(&str, &str)) -> char {
+    let duplicates = find_all_duplicates(compartments);
+    return duplicates.last().unwrap().clone();
+}
+
+fn find_all_duplicates(compartments:(&str, &str)) -> Vec<char> {
     let (left, right) = compartments;
-    let duplicate = left.chars().filter(|c| right.contains(&c.to_string()));
-    return duplicate.last().unwrap();
+    let duplicates = left.chars().filter(|c| right.contains(&c.to_string()));
+    return duplicates.collect();
 }
 
 const PRIORITY_LOWER_A: i32 = 'a' as i32;
@@ -80,6 +122,33 @@ fn compute_item_priority(c:char) -> i32 {
     }
 
     panic!("Invalid character");
+}
+
+fn second_challenge(data:&str) -> i32 {
+    let groups = split_into_group(data); 
+    let priorities = groups.iter().map(|group| compute_group_priority(group));
+    return priorities.sum();
+}
+
+fn split_into_group(data:&str) -> Vec<(&str,&str,&str)> {
+    let splitted_data: Vec<&str> = data.split("\n").collect();
+    let chunks = splitted_data.chunks(3);
+    let groups = chunks.map(|chunk| (chunk[0], chunk[1], chunk[2])).collect();
+    return groups;
+}
+
+fn compute_group_priority(data:&(&str,&str,&str)) -> i32 {
+    let badge = find_badge(data);
+    let priority = compute_item_priority(badge);
+    return priority;
+}
+
+fn find_badge(data:&(&str,&str,&str)) -> char {
+    let (first, second, third) = data;
+    let duplicates_first_second = find_all_duplicates((first, second));
+    let s = String::from_iter(duplicates_first_second);
+    let duplicate = find_duplicate((third, &s));
+    return duplicate;
 }
 
 fn get_sample_data_str() -> &'static str {
